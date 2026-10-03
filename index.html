@@ -61,7 +61,19 @@
     
     <div id="error-container" class="error"></div>
     <ul id="country-list" class="country-list"></ul>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
     <script src="js.js"></script>
-
+    <script type="module">
+        async function getLinks(link){
+    return await fetch(link).then(res => res.text()).catch(err => console.log(err));
+}
+let counter = 0
+let l = document.querySelectorAll("l")
+for (let i of l) {
+    counter++
+    console.log(`(count ${counter}) (data "${i.innerHTML}") (complete ${(counter/l.length) * 100}%)`);
+    await getLinks(i.innerHTML).then(async res => i.outerHTML = res).catch(err => console.log(err));
+}
+    </script>
 </body>
 </html>
