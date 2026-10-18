@@ -4,7 +4,7 @@ const errorElement = document.getElementById('error-container');
 
 async function fetchCountries(query) {
     try {
-        const response = await fetch(`https://restcountries.com/v2/name/${encodeURIComponent(query)}`);
+        const response = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(query)}`);
         
         if (!response.ok) {
             if (response.status === 404) {
@@ -26,10 +26,14 @@ function handleQueryResult(countries) {
     clearResults();
 
     if (countries.length > 10) {
-        PNotify.error({
-            text: 'Знайдено занадто багато збігів. Будь ласка, введіть більш специфічний запит!',
-            delay: 2000,
-        });
+        if (typeof PNotify !== 'undefined') {
+            PNotify.error({
+                text: 'Знайдено занадто багато збігів. Будь ласка, введіть більш специфічний запит!',
+                delay: 2000,
+            });
+        } else {
+            showError('Знайдено занадто багато збігів. Введіть більш специфічний запит!');
+        }
         return;
     }
 
@@ -47,30 +51,43 @@ function handleQueryResult(countries) {
 function renderCountriesList(countries) {
     const list = document.createElement('ul');
     list.className = 'country-list';
+
     countries.forEach(country => {
+        const name = country.name.common;
+        const capital = country.capital ? country.capital[0] : 'Столицю не вказано';
+        const flagSrc = country.flags ? country.flags.png : '';
+
         const li = document.createElement('li');
         li.className = 'country-item';
         li.innerHTML = `
-            <span><strong>${country.name}</strong> (${country.capital || 'Столицю не вказано'})</span>
-            <img src="${country.flag}" alt="Прапор ${country.name}">
+            <span><strong>${name}</strong> (${capital})</span>
+            <img src="${flagSrc}" alt="Прапор ${name}" width="30">
         `;
         list.appendChild(li);
     });
+
     containerElement.appendChild(list);
 }
 
 function renderCountryCard(country) {
-    const languagesList = country.languages ? country.languages.map(lang => `<li>${lang.name}</li>`).join('') : '';
+    const name = country.name.common;
+    const capital = country.capital ? country.capital[0] : 'Немає даних';
+    const population = country.population ? country.population.toLocaleString() : 'Немає даних';
+    const flagSrc = country.flags ? country.flags.png : '';
+    const languages = country.languages ? Object.values(country.languages) : [];
+    const languagesList = languages.map(lang => `<li>${lang}</li>`).join('');
+
     const card = document.createElement('div');
     card.className = 'country-card';
     card.innerHTML = `
-        <h2>${country.name}</h2>
-        <p><strong>Столиця:</strong> ${country.capital || 'Немає даних'}</p>
-        <p><strong>Населення:</strong> ${country.population ? country.population.toLocaleString() : 'Немає даних'}</p>
+        <h2>${name}</h2>
+        <p><strong>Столиця:</strong> ${capital}</p>
+        <p><strong>Населення:</strong> ${population}</p>
         <p><strong>Мови:</strong></p>
-        <ul>${languagesList}</ul>
-        <img src="${country.flag}" alt="Прапор ${country.name}">
+        <ul>${languagesList || '<li>Немає даних</li>'}</ul>
+        <img src="${flagSrc}" alt="Прапор ${name}" width="150">
     `;
+
     containerElement.appendChild(card);
 }
 
@@ -83,7 +100,7 @@ function showError(message) {
     clearResults();
     if (errorElement) {
         errorElement.textContent = message;
-    } else {
+    } else if (typeof PNotify !== 'undefined') {
         PNotify.error({ text: message, delay: 2000 });
     }
 }
